@@ -3,7 +3,6 @@ $(document).ready(function() {
     const userInput = $('#user-input');
     const sendButton = $('#send-button');
     
-    // Add message to chat
     function addMessage(content, isUser) {
         const messageClass = isUser ? 'user-message' : 'bot-message';
         const messageElement = $(`<div class="message ${messageClass}">${content}</div>`);
