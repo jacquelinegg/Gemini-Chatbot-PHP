@@ -1,7 +1,4 @@
 # .gitignore
-__pycache__/
-*.py[cod]
-*.env
 *.secret
 /venv/
 /secrets/

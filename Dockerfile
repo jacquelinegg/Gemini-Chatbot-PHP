@@ -1,23 +1,16 @@
-FROM python:3.9-slim-bullseye
+FROM php:8.2-apache
 
-WORKDIR /app
+# Инсталиране на SQLite и необходимите PHP разширения
+RUN apt-get update && \
+    apt-get install -y sqlite3 libsqlite3-dev && \
+    docker-php-ext-install pdo pdo_sqlite
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+# Останалите инструкции остават същите...
+RUN echo "Listen 7000" > /etc/apache2/ports.conf
+COPY apache.conf /etc/apache2/sites-available/000-default.conf
+RUN a2enmod rewrite headers
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html
 
-# Copy requirements first for caching
-COPY app/requirements.txt .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-
-COPY app .
-
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=production
-
-EXPOSE 5000
-
-CMD ["flask", "run", "--host=0.0.0.0"]
+EXPOSE 7000
+CMD ["apache2-foreground"]

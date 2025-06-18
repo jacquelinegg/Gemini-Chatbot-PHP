@@ -4,7 +4,8 @@ services:
   web:
     build: .
     ports:
-      - "5000:5000"
+      - "7000:7000"
     volumes:
-      - ./app:/app
-    restart: unless-stopped
+      - ./app:/var/www/html/app  # Мапва само app папката
+    environment:
+      - APACHE_PORT=7000

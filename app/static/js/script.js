@@ -10,7 +10,6 @@ $(document).ready(function() {
         chatMessages.scrollTop(chatMessages[0].scrollHeight);
     }
     
-    // Send message to server
     function sendMessage() {
         const message = userInput.val().trim();
         if (message === '') return;
@@ -18,45 +17,62 @@ $(document).ready(function() {
         addMessage(message, true);
         userInput.val('');
         
-        // Disable input while waiting for response
+        // Disable UI during request
         userInput.prop('disabled', true);
         sendButton.prop('disabled', true);
         
-        // Show typing indicator
+        // Typing indicator
         const typingIndicator = $('<div class="message bot-message">Typing...</div>');
         chatMessages.append(typingIndicator);
         chatMessages.scrollTop(chatMessages[0].scrollHeight);
         
-        // Send to server
+        // Critical fixes below:
         $.ajax({
-            url: '/chat',
+            url: 'app.php', // Changed from api.php to app.php
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ message: message }),
+            dataType: 'json', // Explicitly expect JSON response
+            timeout: 10000, // 10-second timeout
             success: function(response) {
                 typingIndicator.remove();
-                addMessage(response.response, false);
+                
+                // Enhanced response handling
+                if (response && response.candidates) {
+                    const text = response.candidates[0].content.parts[0].text;
+                    addMessage(text, false);
+                } else if (response && response.error) {
+                    addMessage('API Error: ' + response.error, false);
+                } else {
+                    addMessage('Invalid response format', false);
+                }
             },
-            error: function(xhr) {
+            error: function(xhr, status, error) {
                 typingIndicator.remove();
-                addMessage('Error: ' + (xhr.responseJSON?.error || 'Failed to get response'), false);
+                
+                // Detailed error handling
+                let errorMsg = 'Error: ';
+                if (xhr.status === 0) {
+                    errorMsg += 'Network connection failed';
+                } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg += xhr.responseJSON.error;
+                } else {
+                    errorMsg += error || 'Unknown error';
+                }
+                addMessage(errorMsg, false);
             },
             complete: function() {
-                userInput.prop('disabled', false);
+                userInput.prop('disabled', false).focus();
                 sendButton.prop('disabled', false);
-                userInput.focus();
             }
         });
     }
     
     // Event handlers
-    sendButton.click(sendMessage);
-    userInput.keypress(function(e) {
-        if (e.which === 13) { // Enter key
-            sendMessage();
-        }
+    sendButton.on('click', sendMessage);
+    userInput.on('keypress', function(e) {
+        if (e.which === 13) sendMessage();
     });
     
-    // Focus input on load
     userInput.focus();
 });
